@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('reports', function (Blueprint $table) {
             $table->id();
+            $table->string('department');
+            $table->string('service_name');
+            $table->string('services_count');
+            $table->dateTime('registration_datetime');
+            $table->dateTime('issue_datetime');
+            $table->string('done_by');
+            $table->string('status');
             $table->timestamps();
         });
     }
