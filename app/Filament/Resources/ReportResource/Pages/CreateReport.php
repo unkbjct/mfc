@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ReportResource\Pages;
 
 use App\Filament\Resources\ReportResource;
 use App\Filament\Resources\ReportResource\Pages;
+use App\Imports\ReportImport;
 use App\Models\Report;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -11,6 +12,8 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CreateReport extends CreateRecord
 {
@@ -28,7 +31,6 @@ class CreateReport extends CreateRecord
             action::make('load')
                 ->label('Загрузить')
                 ->action(function () {
-                    // dd($this);
                 })->submit('asd'),
             action::make('cancel')
                 ->label('Отмена')
@@ -38,24 +40,33 @@ class CreateReport extends CreateRecord
         ];
     }
 
-    // protected function mutateFormDataBeforeCreate(array $data): array
-    // {
-    //     // dd($data['report']);
-    //     return $data;
-    // }
-
-    
-    function handleRecordCreation(array $data): Model
+    protected function mutateFormDataBeforeCreate(array $data): array
     {
         $reportName = $data['report'];
-        
-        dd($filepath = storage_path($reportName));
-
-        return static::getModel()::create($data);
+        Excel::import(new ReportImport, $reportName, 'public');
+        return $data;
     }
 
+
+    function handleRecordCreation(array $data): Model
+    {
+        return static::getModel()::create([
+            'department' => 'for remove',
+            'service_name' => '1',
+            'services_count' => 1,
+            'registration_datetime' => '1',
+            'issue_datetime' => '1',
+            'done_by' => '1',
+            'status' => '1',
+        ]);
+    }
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
     protected function getCreatedNotification(): ?Notification
     {
+        Report::where('department', '=', 'for remove')->delete();
         return Notification::make()
             ->success()
             ->title('Успех')

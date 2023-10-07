@@ -8,4 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Report extends Model
 {
     use HasFactory;
+    protected $fillable = [
+        'department',
+        'service_name',
+        'services_count',
+        'registration_datetime',
+        'issue_datetime',
+        'done_by',
+        'status',
+    ];
 }

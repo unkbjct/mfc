@@ -14,6 +14,9 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -41,6 +44,7 @@ class ReportResource extends Resource
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         'application/vnd.ms-excel'
                     ])
+                    // ->directory('../../framework/cache/laravel-excel')
                     ->extraAttributes(['enctype' => 'multipart/form-data'])
                     ->required(true),
             ])->columns(1);
@@ -51,23 +55,53 @@ class ReportResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('department'),
-                Tables\Columns\TextColumn::make('service_name'),
-                Tables\Columns\TextColumn::make('services_count'),
-                Tables\Columns\TextColumn::make('registration_datetime'),
-                Tables\Columns\TextColumn::make('issue_datetime'),
-                Tables\Columns\TextColumn::make('done_by'),
-                Tables\Columns\TextColumn::make('status'),
-                Tables\Columns\TextColumn::make('created_at'),
+                TextColumn::make('department')
+                    ->sortable()
+                    ->label('МФЦ, в котором зарегистрировано дело'),
+                TextColumn::make('service_name')
+                    ->limit(50)
+                    ->tooltip(function (TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= $column->getCharacterLimit()) {
+                            return null;
+                        }
+                        return $state;
+                    })
+                    ->sortable()
+                    ->searchable('Поиск по наименованию услуги')
+                    ->label('Наименование услуги'),
+                TextColumn::make('services_count')
+                    ->sortable()
+                    ->label('Число услуг в деле'),
+                TextColumn::make('registration_datetime')
+                    ->sortable()
+                    ->label('Дата регистрации'),
+                TextColumn::make('issue_datetime')
+                    ->sortable()
+                    ->label('Дата выдачи дела'),
+                TextColumn::make('done_by')
+                    ->limit(50)
+                    ->tooltip(function (TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= $column->getCharacterLimit()) {
+                            return null;
+                        }
+                        return $state;
+                    })
+                    ->sortable()
+                    ->label('Наименование ОГВ, исполняющего услугу'),
+                TextColumn::make('status')
+                    ->sortable()
+                    ->label('Текущий статус услуги'),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])->paginated([10, 25, 50, 100, 500, 'all'])
+            ->emptyStateHeading('Отчеты отсутствуют')
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+        ;
     }
 
     public static function getRelations(): array
@@ -82,7 +116,7 @@ class ReportResource extends Resource
         return [
             'index' => Pages\ListReports::route('/'),
             'create' => Pages\CreateReport::route('/create'),
-            'edit' => Pages\EditReport::route('/{record}/edit'),
+            // 'edit' => Pages\EditReport::route('/{record}/edit'),
         ];
     }
 }
