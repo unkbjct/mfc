@@ -7,9 +7,9 @@ use Filament\Panel;
 class Dashboard extends \Filament\Pages\Dashboard
 {
 
-    protected static ?string $navigationLabel = 'Панель приборов';
+    protected static ?string $navigationLabel = 'Dashboard';
 
-    protected static ?string $title = 'Панель приборов';
+    protected static ?string $title = 'Dashboard';
 
     protected int | string | array $columnSpan = 'full';
 
