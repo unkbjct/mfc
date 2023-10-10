@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Auth\Register;
+use App\Filament\Resources\NResource\Widgets\LatestLoads;
 use App\Filament\Resources\YesResource\Widgets\LatestReports;
 use App\Filament\Resources\YesResource\Widgets\StatsOverview;
 use Filament\Http\Middleware\Authenticate;
@@ -36,7 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
-            ->registration(Register::class)
+            // ->registration(Register::class)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -47,6 +48,7 @@ class AdminPanelProvider extends PanelProvider
                 // Widgets\AccountWidget::class,
                 StatsOverview::class,
                 LatestReports::class,
+                LatestLoads::class,
             ])
             ->middleware([
                 EncryptCookies::class,

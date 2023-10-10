@@ -40,16 +40,11 @@ class CreateReport extends CreateRecord
         ];
     }
 
-    protected function mutateFormDataBeforeCreate(array $data): array
+    function handleRecordCreation(array $data): Model
     {
         $reportName = $data['report'];
         Excel::import(new ReportImport, $reportName, 'public');
-        return $data;
-    }
-
-
-    function handleRecordCreation(array $data): Model
-    {
+        
         return static::getModel()::create([
             'department' => 'for remove',
             'service_name' => '1',

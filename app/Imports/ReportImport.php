@@ -3,9 +3,11 @@
 namespace App\Imports;
 
 use App\Models\Import;
+use App\Models\Load;
 use App\Models\Report;
 use Dotenv\Parser\Value;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\ToModel;
@@ -31,6 +33,12 @@ class ReportImport implements ToCollection
             'Текущий статус услуги' => 'status',
         ];
 
+        $information = [
+            'rows' => 0,
+            'duplicates' => 0,
+            'added' => 0,
+        ];
+
         $tmpArray = [];
         foreach ($rows as $index => $row) {
             if ($index == 0) {
@@ -51,6 +59,8 @@ class ReportImport implements ToCollection
                 $tmpReport[$columns[$tmpArray[$i]]] = $value;
             }
 
+            $information['rows']++;
+
             $report = new Report();
             foreach ($tmpReport as $key => $value) {
                 $report->$key = $value;
@@ -65,9 +75,20 @@ class ReportImport implements ToCollection
             if (array_key_exists('status', $tmpReport)) $repeat = $repeat->where('status', $tmpReport['status']);
             $repeat = $repeat->get();
 
-            if ($repeat->isNotEmpty()) continue;
+            if ($repeat->isNotEmpty()) {
+                $information['duplicates']++;
+                continue;
+            };
 
+            $information['added']++;
             $report->save();
         }
+
+        $load = new Load();
+        $load->rows = $information['rows'];
+        $load->added = $information['added'];
+        $load->duplicates = $information['duplicates'];
+        $load->user_id = Auth::user()->id;
+        $load->save();
     }
 }

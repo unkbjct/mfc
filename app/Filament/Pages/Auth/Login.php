@@ -24,13 +24,13 @@ class Login extends \Filament\Pages\Auth\Login
         return 'Авторизация';
     }
 
-    public function registerAction(): Action
-    {
-        return Action::make('registration')
-            ->link()
-            ->label('Создать аккаунт')
-            ->url(filament()->getRegistrationUrl());
-    }
+    // public function registerAction(): Action
+    // {
+    //     return Action::make('registration')
+    //         ->link()
+    //         ->label('Создать аккаунт')
+    //         ->url(filament()->getRegistrationUrl());
+    // }
 
     public function form(Form $form): Form
     {

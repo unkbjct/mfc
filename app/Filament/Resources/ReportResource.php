@@ -96,11 +96,11 @@ class ReportResource extends Resource
             ])
             ->filters([])->paginated([10, 25, 50, 100, 500, 'all'])
             ->emptyStateHeading('Отчеты отсутствуют')
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            // ->bulkActions([
+            //     Tables\Actions\BulkActionGroup::make([
+                    // Tables\Actions\DeleteBulkAction::make(),
+            //     ]),
+            // ]);
         ;
     }
 
