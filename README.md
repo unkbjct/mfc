@@ -4,7 +4,7 @@
 `composer install`
 
 Выполнить миграцию таблиц:
-`php artisana migrate`
+`php artisan migrate`
 
 Добавить администратора:
 `php artisan make:filament-user`
