@@ -98,7 +98,7 @@ class ReportResource extends Resource
             ->emptyStateHeading('Отчеты отсутствуют')
             // ->bulkActions([
             //     Tables\Actions\BulkActionGroup::make([
-                    // Tables\Actions\DeleteBulkAction::make(),
+            //         Tables\Actions\DeleteBulkAction::make(),
             //     ]),
             // ]);
         ;

@@ -44,12 +44,17 @@ class ReportImport implements ToCollection
             if ($index == 0) {
                 foreach ($row as $title) {
                     if ($title === null) continue;
-                    if (!array_key_exists($title, $columns) && !Schema::hasColumn('reports', Str::slug($title, '_'))) {
-                        Schema::table('reports', function ($table) use ($title) {
-                            $table->string(Str::slug($title, '_'))->nullable();
-                        });
+                    if (!array_key_exists($title, $columns)) {
+                        if (!Schema::hasColumn('reports', Str::slug($title, '_'))) {
+                            Schema::table('reports', function ($table) use ($title) {
+                                $table->string(Str::slug($title, '_'))->nullable();
+                            });
+                        }
+                        array_push($tmpArray, $title);
+                        $columns[$title] = Str::slug($title, '_');
+                    } else {
+                        array_push($tmpArray, $title);
                     }
-                    array_push($tmpArray, $title);
                 }
                 continue;
             };
