@@ -11,8 +11,9 @@ class Load extends Model
 {
     use HasFactory;
 
-    public function user(): HasMany
-    {
-        return $this->HasMany(User::class);
-    }
+    // public function user(): HasMany
+    // {
+    //     return $this->HasMany(User::class);
+    // }
+
 }

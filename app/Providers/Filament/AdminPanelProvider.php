@@ -7,6 +7,7 @@ use App\Filament\Pages\Auth\Register;
 use App\Filament\Resources\NResource\Widgets\LatestLoads;
 use App\Filament\Resources\YesResource\Widgets\LatestReports;
 use App\Filament\Resources\YesResource\Widgets\StatsOverview;
+use App\Filament\Resources\YResource\Widgets\ProcessLoad;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -46,8 +47,9 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 // Widgets\AccountWidget::class,
+                ProcessLoad::class,
                 StatsOverview::class,
-                LatestReports::class,
+                // LatestReports::class,
                 LatestLoads::class,
             ])
             ->middleware([

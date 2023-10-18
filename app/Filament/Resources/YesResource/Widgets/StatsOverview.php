@@ -8,13 +8,14 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class StatsOverview extends BaseWidget
 {
+    protected static ?string $pollingInterval = '10s';
     protected function getStats(): array
     {
         $reports = Report::all();
         // $success = Report::where("status", "Выдано")->get();
         // $cancel = Report::where("status", "Перенаправлено")->get();
         return [
-            Stat::make('Всего записей', $reports->count())
+            Stat::make('', $reports->count())
                 // ->description('32k increase')
                 // ->descriptionIcon('heroicon-m-arrow-trending-up')
                 // ->chart([7, 2, 10, 3, 15, 4, 17])

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ReportResource\Pages;
 use App\Filament\Resources\ReportResource;
 use App\Filament\Resources\ReportResource\Pages;
 use App\Imports\ReportImport;
+use App\Jobs\StartLoad;
 use App\Models\Report;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -30,8 +31,14 @@ class CreateReport extends CreateRecord
         return [
             action::make('load')
                 ->label('Загрузить')
-                ->successRedirectUrl($this->getResource()::getUrl('progress'))
                 ->action(function () {
+                    if (!sizeof($this->data['report'])) {
+                        Notification::make()
+                            ->title('Файл не выбран')
+                            ->danger()
+                            ->send();
+                        return;
+                    };
                     $tmpFile = array_shift($this->data['report']);
                     $fileName = $tmpFile->getFileName();
                     Storage::disk('local')
@@ -39,7 +46,14 @@ class CreateReport extends CreateRecord
                             'livewire-tmp/' . $fileName,
                             'public/' . $fileName
                         );
-                    Excel::queueImport(new ReportImport, $fileName, 'public');
+                    StartLoad::dispatch([
+                        'filename' => $fileName
+                    ]);
+                    Notification::make()
+                        ->title('Загрузка успешно начата')
+                        ->body('Вы можете отслеживать отслеживать статус загрузки в дашбоард')
+                        ->success()
+                        ->send();
                     // redirect($this->getResource()::getUrl('progress'));
                 }),
             action::make('cancel')

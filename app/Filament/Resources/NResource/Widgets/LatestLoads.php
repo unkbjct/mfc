@@ -4,6 +4,7 @@ namespace App\Filament\Resources\NResource\Widgets;
 
 use App\Models\Load;
 use Filament\Tables;
+use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -22,14 +23,15 @@ class LatestLoads extends BaseWidget
 
     protected function getTableQuery(): Builder
     {
-        return Load::query()->latest();
+        $loads = Load::query()->latest();
+        return $loads;
     }
 
     protected function getTableColumns(): array
     {
         return [
             // TextColumn::make('user.email')
-                // ->label('Пользователь'),
+            // ->label('Пользователь'),
             TextColumn::make('rows')
                 ->label('Всего записей'),
             TextColumn::make('added')
@@ -37,7 +39,22 @@ class LatestLoads extends BaseWidget
             TextColumn::make('duplicates')
                 ->label('Не добавленные(дубликаты)'),
             TextColumn::make('created_at')
-                ->label('Дата загрузки'),
+                ->label('Начало загрузки'),
+            TextColumn::make('updated_at')
+                ->label('Конец загрузки'),
+            TextColumn::make('status')
+                ->badge()
+                ->label('Статус')
+                // ->label(fn (string $state): string => match ($state) {
+                //     'processing' => 'В процессе',
+                //     'loaded' => 'Загружено',
+                //     'crash' => 'Не загружено',
+                // })
+                ->color(fn (string $state): string => match ($state) {
+                    'processing' => 'warning',
+                    'loaded' => 'success',
+                    'crash' => 'danger',
+                })
         ];
     }
 }

@@ -2,39 +2,62 @@
 
 namespace App\Imports;
 
-use App\Models\Import;
 use App\Models\Load;
 use App\Models\Report;
-use Dotenv\Parser\Value;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Exception;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\ToModel;
 use Illuminate\Support\Str;
-use Maatwebsite\Excel\Concerns\Importable;
+use Maatwebsite\Excel\Concerns\RegistersEventListeners;
 use Maatwebsite\Excel\Concerns\RemembersChunkOffset;
-use Maatwebsite\Excel\Concerns\RemembersRowNumber;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterImport;
+use Maatwebsite\Excel\Events\BeforeImport;
 
-class ReportImport implements ToCollection, WithBatchInserts, WithChunkReading, ShouldQueue
+class ReportImport implements ToCollection, WithBatchInserts, WithChunkReading, WithEvents
 {
     /**
      * @param array $row
      *
      * @return \Illuminate\Database\Eloquent\Model|null
      */
-
     use RemembersChunkOffset;
-    use Importable;
+
+    protected int $duplicate;
+    protected int $rows;
+    protected int $added;
+    protected string $status;
+
+    protected array $columns;
+    protected array $ruColumns;
+
+    protected int $loadId;
+
     function __construct()
     {
-        Log::debug('construct');
+        $this->duplicate = 0;
+        $this->rows = 0;
+        $this->added = 0;
+        $this->status = 'processing';
+
+        $this->columns = [
+            'МФЦ, в котором зарегистрировано дело' => 'department',
+            'Наименование услуги' => 'service_name',
+            'Число услуг в деле' => 'services_count',
+            'Дата регистрации' => 'registration_datetime',
+            'Дата выдачи дела' => 'issue_datetime',
+            'Наименование ОГВ, исполняющего услугу' => 'done_by',
+            'Текущий статус услуги' => 'status',
+        ];
+        $this->ruColumns = [];
+
+        $this->loadId = 0;
     }
+
     public function batchSize(): int
     {
         return 1000;
@@ -45,81 +68,85 @@ class ReportImport implements ToCollection, WithBatchInserts, WithChunkReading, 
         return 1000;
     }
 
-    public array $columns = [
-        'МФЦ, в котором зарегистрировано дело' => 'department',
-        'Наименование услуги' => 'service_name',
-        'Число услуг в деле' => 'services_count',
-        'Дата регистрации' => 'registration_datetime',
-        'Дата выдачи дела' => 'issue_datetime',
-        'Наименование ОГВ, исполняющего услугу' => 'done_by',
-        'Текущий статус услуги' => 'status',
-    ];
+    public function registerEvents(): array
+    {
+        return [
+            BeforeImport::class => function (BeforeImport $event) {
+                $load = new Load();
+                $load->status = $this->status;
+                $load->rows = $this->rows;
+                $load->added = 0;
+                $load->duplicates = 0;
+                // $load->user_id = Auth::user()->id;
+                $load->save();
+                $this->loadId = $load->id;
+            },
 
-    public array $ruColumns = [];
+            AfterImport::class => function () {
+                $load = Load::find($this->loadId);
+                $load->rows = $this->rows;
+                $load->status = $this->status;
+                $load->added = $this->added;
+                $load->duplicates = $this->duplicate;
+                $load->save();
+            }
+        ];
+    }
 
     public function collection(Collection $rows)
     {
-        Log::debug('function');
-        $information = [
-            'rows' => 0,
-            'duplicates' => 0,
-            'added' => 0,
-        ];
-        foreach ($rows as $index => $row) {
-            if ($index == 0 && $this->getChunkOffset() == 1) {
-                foreach ($row as $title) {
-                    if ($title === null) continue;
-                    if (!array_key_exists($title, $this->columns)) {
-                        if (!Schema::hasColumn('reports', Str::slug($title, '_'))) {
-                            Schema::table('reports', function ($table) use ($title) {
-                                $table->string(Str::slug($title, '_'))->nullable();
-                            });
+        // Log::debug('readed chunk');
+        try {
+            foreach ($rows as $index => $row) {
+                if ($index == 0 && $this->getChunkOffset() == 1) {
+                    foreach ($row as $title) {
+                        if ($title === null) continue;
+                        if (!array_key_exists($title, $this->columns)) {
+                            if (!Schema::hasColumn('reports', Str::slug($title, '_'))) {
+                                Schema::table('reports', function ($table) use ($title) {
+                                    $table->string(Str::slug($title, '_'))->nullable();
+                                });
+                            }
+                            array_push($this->ruColumns, $title);
+                            $this->columns[$title] = Str::slug($title, '_');
+                        } else {
+                            array_push($this->ruColumns, $title);
                         }
-                        array_push($this->ruColumns, $title);
-                        $this->columns[$title] = Str::slug($title, '_');
-                    } else {
-                        array_push($this->ruColumns, $title);
                     }
+                    continue;
+                };
+                $this->rows++;
+                $tmpReport = [];
+                foreach ($row as $i => $value) {
+                    if ($value === null) continue;
+                    $tmpReport[$this->columns[$this->ruColumns[$i]]] = $value;
                 }
-                continue;
-            };
-            $tmpReport = [];
-            foreach ($row as $i => $value) {
-                if ($value === null) continue;
-                $tmpReport[$this->columns[$this->ruColumns[$i]]] = $value;
+
+                $report = new Report();
+                foreach ($tmpReport as $key => $value) {
+                    $report->$key = $value;
+                }
+
+                $repeat = Report::where('service_name', $tmpReport['service_name']);
+                if (array_key_exists('department', $tmpReport)) $repeat = $repeat->where('department', $tmpReport['department']);
+                if (array_key_exists('services_count', $tmpReport)) $repeat = $repeat->where('services_count', $tmpReport['services_count']);
+                if (array_key_exists('registration_datetime', $tmpReport)) $repeat = $repeat->where('registration_datetime', $tmpReport['registration_datetime']);
+                if (array_key_exists('issue_datetime', $tmpReport)) $repeat = $repeat->where('issue_datetime', $tmpReport['issue_datetime']);
+                if (array_key_exists('done_by', $tmpReport)) $repeat = $repeat->where('done_by', $tmpReport['done_by']);
+                if (array_key_exists('status', $tmpReport)) $repeat = $repeat->where('status', $tmpReport['status']);
+                $repeat = $repeat->get();
+
+                if ($repeat->isNotEmpty()) {
+                    $this->duplicate++;
+                    continue;
+                };
+
+                $this->added++;
+                $report->save();
             }
-
-
-            $report = new Report();
-            foreach ($tmpReport as $key => $value) {
-                $report->$key = $value;
-            }
-            // $information['rows']++;
-
-
-            $repeat = Report::where('service_name', $tmpReport['service_name']);
-            if (array_key_exists('department', $tmpReport)) $repeat = $repeat->where('department', $tmpReport['department']);
-            if (array_key_exists('services_count', $tmpReport)) $repeat = $repeat->where('services_count', $tmpReport['services_count']);
-            if (array_key_exists('registration_datetime', $tmpReport)) $repeat = $repeat->where('registration_datetime', $tmpReport['registration_datetime']);
-            if (array_key_exists('issue_datetime', $tmpReport)) $repeat = $repeat->where('issue_datetime', $tmpReport['issue_datetime']);
-            if (array_key_exists('done_by', $tmpReport)) $repeat = $repeat->where('done_by', $tmpReport['done_by']);
-            if (array_key_exists('status', $tmpReport)) $repeat = $repeat->where('status', $tmpReport['status']);
-            $repeat = $repeat->get();
-
-            if ($repeat->isNotEmpty()) {
-                $information['duplicates']++;
-                continue;
-            };
-
-            $information['added']++;
-            $report->save();
+            $this->status = "loaded";
+        } catch (Exception $e) {
+            $this->status = "crash";
         }
-
-        $load = new Load();
-        $load->rows = $information['rows'];
-        $load->added = $information['added'];
-        $load->duplicates = $information['duplicates'];
-        $load->user_id = Auth::user()->id;
-        $load->save();
     }
 }

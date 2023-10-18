@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('loads', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->string('status');
+            // $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('rows');
             $table->string('added');
             $table->string('duplicates');
