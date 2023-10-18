@@ -18,4 +18,6 @@ Route::get('/', function () {
     return redirect('/admin');
 });
 
-
+Route::get('/asd', function () {
+    return 123;
+})->name('asd');

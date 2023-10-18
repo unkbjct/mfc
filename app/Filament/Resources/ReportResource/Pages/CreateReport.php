@@ -7,12 +7,12 @@ use App\Filament\Resources\ReportResource\Pages;
 use App\Imports\ReportImport;
 use App\Models\Report;
 use Filament\Actions\Action;
-use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Maatwebsite\Excel\Facades\Excel;
 
 class CreateReport extends CreateRecord
@@ -30,8 +30,18 @@ class CreateReport extends CreateRecord
         return [
             action::make('load')
                 ->label('Загрузить')
+                ->successRedirectUrl($this->getResource()::getUrl('progress'))
                 ->action(function () {
-                })->submit('asd'),
+                    $tmpFile = array_shift($this->data['report']);
+                    $fileName = $tmpFile->getFileName();
+                    Storage::disk('local')
+                        ->move(
+                            'livewire-tmp/' . $fileName,
+                            'public/' . $fileName
+                        );
+                    Excel::queueImport(new ReportImport, $fileName, 'public');
+                    // redirect($this->getResource()::getUrl('progress'));
+                }),
             action::make('cancel')
                 ->label('Отмена')
                 ->color('gray')
@@ -44,7 +54,7 @@ class CreateReport extends CreateRecord
     {
         $reportName = $data['report'];
         Excel::import(new ReportImport, $reportName, 'public');
-        
+        redirect()->route('asd');
         return static::getModel()::create([
             'department' => 'for remove',
             'service_name' => '1',
@@ -55,10 +65,10 @@ class CreateReport extends CreateRecord
             'status' => '1',
         ]);
     }
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('index');
-    }
+    // protected function getRedirectUrl(): string
+    // {
+    //     // return $this->getResource()::getUrl('index');
+    // }
     protected function getCreatedNotification(): ?Notification
     {
         Report::where('department', '=', 'for remove')->delete();

@@ -96,12 +96,11 @@ class ReportResource extends Resource
             ])
             ->filters([])->paginated([10, 25, 50, 100, 500, 'all'])
             ->emptyStateHeading('Отчеты отсутствуют')
-            // ->bulkActions([
-            //     Tables\Actions\BulkActionGroup::make([
-            //         Tables\Actions\DeleteBulkAction::make(),
-            //     ]),
-            // ]);
-        ;
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);;
     }
 
     public static function getRelations(): array
@@ -116,6 +115,7 @@ class ReportResource extends Resource
         return [
             'index' => Pages\ListReports::route('/'),
             'create' => Pages\CreateReport::route('/create'),
+            'progress' => Pages\ProgressLoad::route('/load'),
             // 'edit' => Pages\EditReport::route('/{record}/edit'),
         ];
     }
