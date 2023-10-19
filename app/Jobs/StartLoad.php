@@ -28,6 +28,9 @@ class StartLoad implements ShouldQueue
      */
     public function handle(): void
     {
-        Excel::import(new ReportImport, $this->data['filename'], 'public');
+        $import = new ReportImport;
+        $import->fileName = $this->data['filename'];
+        $import->loadId = $this->data['loadId'];
+        Excel::import($import, $this->data['filename'], 'public');
     }
 }

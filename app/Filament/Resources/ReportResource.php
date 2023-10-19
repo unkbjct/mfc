@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Pages\Dashboard;
 use App\Filament\Resources\ReportResource\Pages;
 use App\Filament\Resources\ReportResource\RelationManagers;
 use App\Models\Report;
@@ -44,8 +45,6 @@ class ReportResource extends Resource
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         'application/vnd.ms-excel'
                     ])
-                    // ->directory('../../framework/cache/laravel-excel')
-                    ->extraAttributes(['enctype' => 'multipart/form-data'])
                     ->required(true),
             ])->columns(1);
     }
@@ -115,7 +114,6 @@ class ReportResource extends Resource
         return [
             'index' => Pages\ListReports::route('/'),
             'create' => Pages\CreateReport::route('/create'),
-            // 'edit' => Pages\EditReport::route('/{record}/edit'),
         ];
     }
 }

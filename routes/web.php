@@ -1,5 +1,7 @@
 <?php
 
+use App\Providers\Filament\AdminPanelProvider;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
@@ -13,11 +15,3 @@ use Livewire\Livewire;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
-Route::get('/', function () {
-    return redirect('/admin');
-});
-
-Route::get('/asd', function () {
-    return 123;
-})->name('asd');

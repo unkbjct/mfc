@@ -3,28 +3,20 @@
 namespace App\Filament\Resources\ReportResource\Pages;
 
 use App\Filament\Resources\ReportResource;
-use App\Filament\Resources\ReportResource\Pages;
-use App\Imports\ReportImport;
 use App\Jobs\StartLoad;
-use App\Models\Report;
+use App\Models\Load;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use Maatwebsite\Excel\Facades\Excel;
 
 class CreateReport extends CreateRecord
 {
     protected static string $resource = ReportResource::class;
-    protected static ?string $navigationLabel = 'Custom Navigation Label';
 
     protected static ?string $title = "Загрузка нового отчета";
 
     protected static bool $canCreateAnother = false;
-    protected static ?string $createLabel = 'asd';
 
     function getFormActions(): array
     {
@@ -46,15 +38,26 @@ class CreateReport extends CreateRecord
                             'livewire-tmp/' . $fileName,
                             'public/' . $fileName
                         );
+
+                    $load = new Load();
+                    $load->status = "processing";
+                    $load->rows = 0;
+                    $load->added = 0;
+                    $load->duplicates = 0;
+                    $load->save();
+
                     StartLoad::dispatch([
-                        'filename' => $fileName
+                        'filename' => $fileName,
+                        'loadId' => $load->id,
                     ]);
+
                     Notification::make()
                         ->title('Загрузка успешно начата')
                         ->body('Вы можете отслеживать отслеживать статус загрузки в дашбоард')
                         ->success()
                         ->send();
-                    // redirect($this->getResource()::getUrl('progress'));
+
+                    return redirect('../');
                 }),
             action::make('cancel')
                 ->label('Отмена')
@@ -62,33 +65,5 @@ class CreateReport extends CreateRecord
                 ->action(fn () => redirect($this->previousUrl ?? $this->getResource()::getUrl('index'))),
 
         ];
-    }
-
-    function handleRecordCreation(array $data): Model
-    {
-        $reportName = $data['report'];
-        Excel::import(new ReportImport, $reportName, 'public');
-        redirect()->route('asd');
-        return static::getModel()::create([
-            'department' => 'for remove',
-            'service_name' => '1',
-            'services_count' => 1,
-            'registration_datetime' => '1',
-            'issue_datetime' => '1',
-            'done_by' => '1',
-            'status' => '1',
-        ]);
-    }
-    // protected function getRedirectUrl(): string
-    // {
-    //     // return $this->getResource()::getUrl('index');
-    // }
-    protected function getCreatedNotification(): ?Notification
-    {
-        Report::where('department', '=', 'for remove')->delete();
-        return Notification::make()
-            ->success()
-            ->title('Успех')
-            ->body('Отчет был успешно загружен.');
     }
 }

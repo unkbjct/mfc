@@ -9,6 +9,9 @@
 Добавить администратора:
 `php artisan make:filament-user`
 
+Запустить работу очередей:
+`php artisan queue:work`
+
 ## Технологии
 
 Приложение написано на **Laravel 10.10**
